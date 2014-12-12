@@ -5,5 +5,5 @@ package org.config.client;
  */
 public interface Observer {
 
-    public void update(Object data);
+    public void update(String data);
 }

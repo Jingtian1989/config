@@ -1,9 +1,7 @@
 package org.config.server.push;
 
 import org.config.common.domain.ServerEvent;
-import org.config.server.domain.Group;
 import org.config.server.server.ClientConnection;
-import org.config.server.store.DataKeeper;
 
 import java.util.Map;
 
@@ -12,15 +10,14 @@ import java.util.Map;
  */
 public class DataPusher {
 
-    private DataKeeper keeper;
-
-    public void push(Group group, ClientConnection client) {
-        Map<String, String> data = keeper.query(group);
+    public void push(Map<String, String> data, ClientConnection client) {
         ServerEvent event = new ServerEvent(ServerEvent.SERVER_SUBSCRIBER_SUBSCRIBE_EVENT, data);
         client.getWriter().write(event);
     }
 
-    public void push(Group group) {
-
+    public void push(Map<String, String> data, ClientConnection[] clients) {
+        for (ClientConnection client : clients) {
+            push(data, client);
+        }
     }
 }

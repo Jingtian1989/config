@@ -1,13 +1,10 @@
 package org.config.client;
 
 
-
-import java.io.Serializable;
-
 /**
  * Created by jingtian.zjt on 2014/12/9.
  */
-public class Subscriber<T extends Serializable> extends ConfigClient {
+public class Subscriber extends ConfigClient {
 
     private Observer observer;
 

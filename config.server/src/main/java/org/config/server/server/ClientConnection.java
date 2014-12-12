@@ -1,6 +1,8 @@
 package org.config.server.server;
 
-import org.config.common.domain.ConfigConstant;
+import org.config.common.Constants;
+import org.config.common.util.NetUtil;
+import org.config.server.domain.Data;
 import org.config.server.domain.Group;
 import org.remote.common.service.ResponseWriter;
 import org.slf4j.Logger;
@@ -18,9 +20,15 @@ public class ClientConnection {
     private ResponseWriter writer;
     private ConcurrentHashMap<Group, Publisher> publishers;
     private ConcurrentHashMap<Group, Subscriber> subscribers;
+    private String hostId;
+    private String ip;
 
     public ClientConnection(ResponseWriter writer) {
         this.writer = writer;
+        this.hostId = writer.getConnection().getRemoteAddress() + ":" + "8001";
+        this.ip = NetUtil.getLocalAddress().getHostAddress();
+        this.publishers = new ConcurrentHashMap<Group, Publisher>();
+        this.subscribers = new ConcurrentHashMap<Group, Subscriber>();
     }
 
     public void addSubscriber(Group group, String clientId) {
@@ -40,14 +48,36 @@ public class ClientConnection {
             }
         }
         publisher = new Publisher(group, clientId);
-        Data data = new Data(null, ConfigConstant.UNINIT_VERSION);
+        Data data = new Data(null, Constants.UNINIT_VERSION);
         publisher.setData(data);
         publishers.put(group, publisher);
         return true;
     }
 
+    public void publish(Group group, String clientId, String data, int version) {
+        Publisher publisher = publishers.get(group);
+        if (publisher == null) {
+            LOGGER.error("[CONFIG] not registered publisher clientId:" + clientId);
+            return;
+        }
+
+        if (publisher.getData().getVersion() >= version) {
+            LOGGER.error("[CONFIG] publish low version data clientId:" + clientId);
+            return;
+        }
+        publisher.setData(new Data(data, version));
+    }
+
     public ResponseWriter getWriter(){
         return writer;
+    }
+
+    public String getHostId() {
+        return hostId;
+    }
+
+    public Data query(Group group) {
+        return publishers.get(group).getData();
     }
 
     private static class Publisher {
@@ -95,20 +125,4 @@ public class ClientConnection {
         }
     }
 
-    private static class Data {
-        private String data;
-        private int version;
-        public Data (String data, int version) {
-            this.data = data;
-            this.version = version;
-        }
-
-        public String getData() {
-            return data;
-        }
-
-        public int getVersion() {
-            return version;
-        }
-    }
 }

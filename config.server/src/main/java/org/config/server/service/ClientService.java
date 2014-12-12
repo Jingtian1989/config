@@ -44,7 +44,7 @@ public class ClientService implements Processor{
         Group group = Group.getGroup((String)data.get("groupId"),(String)data.get("dataId"));
         ClientConnection client = addNativeClient(writer);
         keeper.addSubscriber(client, group, (String)data.get("clientId"));
-        pusher.push(group, client);
+        pusher.push(keeper.query(group), client);
     }
 
 
@@ -60,6 +60,7 @@ public class ClientService implements Processor{
         Group group = Group.getGroup((String)data.get("groupId"), (String)data.get("dataId"));
         ClientConnection client = addNativeClient(writer);
         keeper.publish(client, group, (String)data.get("clientId"), (String)data.get("data"), (Integer)data.get("version"));
+        pusher.push(keeper.query(group), natives.entrySet().toArray(new ClientConnection[0]));
     }
 
     private ClientConnection addNativeClient(ResponseWriter writer) {
