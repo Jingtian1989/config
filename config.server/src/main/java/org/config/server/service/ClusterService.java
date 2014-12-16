@@ -1,41 +1,31 @@
 package org.config.server.service;
 
-import org.config.common.domain.ClusterEvent;
+import org.config.common.domain.ClusterMessage;
 import org.remote.common.annotation.TargetType;
 import org.remote.common.service.Processor;
-import org.remote.common.service.ResponseWriter;
+import org.remote.common.service.Writer;
 
 /**
  * Created by jingtian.zjt on 2014/12/9.
  */
-@TargetType(value = ClusterEvent.class)
+@TargetType(value = ClusterMessage.class)
 public class ClusterService implements Processor{
 
     @Override
-    public void handleRequest(Object o, ResponseWriter writer) {
-        ClusterEvent event = (ClusterEvent) o;
-        switch (event.getType()) {
-            case ClusterEvent.CLUSTER_SYNC_EVENT:
-                handlSyncRequest(event.getData(), writer);
-                break;
-            case ClusterEvent.CLUSTER_DELETE_EVENT:
-                handleDelRequest(event.getData(), writer);
-                break;
-            case ClusterEvent.CLUSTER_DELAY_EVENT:
-                handleDlyRequest(event.getData(), writer);
-                break;
-        }
-    }
-
-    private void handleDlyRequest(Object data, ResponseWriter writer) {
+    public void handleMessage(Object o, Writer writer) {
+        ClusterMessage message = (ClusterMessage) o;
 
     }
 
-    private void handleDelRequest(Object data, ResponseWriter writer) {
+    private void handleDlyRequest(Object data, Writer writer) {
 
     }
 
-    private void handlSyncRequest(Object data, ResponseWriter writer) {
+    private void handleDelRequest(Object data, Writer writer) {
+
+    }
+
+    private void handlSyncRequest(Object data, Writer writer) {
 
     }
 }

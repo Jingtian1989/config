@@ -2,13 +2,15 @@ package org.config.server.server;
 
 import org.config.common.Constants;
 import org.config.common.util.NetUtil;
-import org.config.server.domain.Data;
 import org.config.server.domain.Group;
-import org.remote.common.service.ResponseWriter;
+import org.config.server.domain.Record;
+import org.remote.common.service.Writer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetSocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by jingtian.zjt on 2014/12/12.
@@ -17,16 +19,15 @@ public class ClientConnection {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientConnection.class);
 
-    private ResponseWriter writer;
+    private Writer writer;
     private ConcurrentHashMap<Group, Publisher> publishers;
     private ConcurrentHashMap<Group, Subscriber> subscribers;
     private String hostId;
-    private String ip;
 
-    public ClientConnection(ResponseWriter writer) {
+    public ClientConnection(Writer writer) {
+        InetSocketAddress address = (InetSocketAddress) writer.getConnection().getRemoteAddress();
         this.writer = writer;
-        this.hostId = writer.getConnection().getRemoteAddress() + ":" + "8001";
-        this.ip = NetUtil.getLocalAddress().getHostAddress();
+        this.hostId = address.getAddress().getHostAddress() +":"+ address.getPort();
         this.publishers = new ConcurrentHashMap<Group, Publisher>();
         this.subscribers = new ConcurrentHashMap<Group, Subscriber>();
     }
@@ -48,8 +49,6 @@ public class ClientConnection {
             }
         }
         publisher = new Publisher(group, clientId);
-        Data data = new Data(null, Constants.UNINIT_VERSION);
-        publisher.setData(data);
         publishers.put(group, publisher);
         return true;
     }
@@ -61,14 +60,14 @@ public class ClientConnection {
             return;
         }
 
-        if (publisher.getData().getVersion() >= version) {
+        if (publisher.getVersion() >= version) {
             LOGGER.error("[CONFIG] publish low version data clientId:" + clientId);
             return;
         }
-        publisher.setData(new Data(data, version));
+        publisher.update(data, version);
     }
 
-    public ResponseWriter getWriter(){
+    public Writer getWriter(){
         return writer;
     }
 
@@ -76,18 +75,42 @@ public class ClientConnection {
         return hostId;
     }
 
-    public Data query(Group group) {
-        return publishers.get(group).getData();
+
+    public String hasSubscriber(Group group) {
+        Subscriber subscriber = subscribers.get(group);
+        String clientId = null;
+        if (subscriber != null) {
+            clientId = subscriber.getClientId();
+        }
+        return clientId;
+    }
+
+
+    public Record query(Group group) {
+        Publisher publisher = publishers.get(group);
+        Record record = null;
+        if (publisher != null) {
+            record = new Record();
+            record.setClientId(publisher.getClientId());
+            record.setData(publisher.getData());
+            record.setDataId(group.getDataId());
+            record.setGroup(group.getGroup());
+            record.setVersion(publisher.getVersion());
+        }
+        return record;
     }
 
     private static class Publisher {
-        final Group group;
-        final String clientId;
-        Data data;
+        private Group group;
+        private String clientId;
+        private String data;
+        private AtomicInteger version;
 
         public Publisher(Group group, String clientId) {
             this.group = group;
             this.clientId = clientId;
+            this.data = null;
+            this.version = new AtomicInteger(Constants.UNINIT_VERSION);
         }
 
         public Group getGroup() {
@@ -98,18 +121,23 @@ public class ClientConnection {
             return clientId;
         }
 
-        public void setData(Data data) {
-            this.data = data;
+        public String getData() {
+            return data;
         }
 
-        public Data getData() {
-            return data;
+        public int getVersion() {
+            return version.get();
+        }
+
+        public void update(String data, int version) {
+            this.version.set(version);
+            this.data = data;
         }
     }
 
     private static class Subscriber {
-        private final Group group;
-        private final String clientId;
+        private Group group;
+        private String clientId;
 
         public Subscriber(Group group, String clientId) {
             this.group = group;
