@@ -7,7 +7,7 @@ import org.config.client.PublisherRegistrar;
 /**
  * Created by jingtian.zjt on 2014/12/16.
  */
-public class PublisherBootstrap {
+public class PublisherBoot {
 
     public static void main(String args[]) {
         ClientRegistration publisherRegistration = new ClientRegistration("publisher", "testId-01", "group-01");
