@@ -31,10 +31,6 @@ public class ServerMessage implements Serializable{
         return digests;
     }
 
-    public void addDigests(List<MessageDigest> digests) {
-        this.digests.addAll(digests);
-    }
-
     public String getClientId() {
         return clientId;
     }

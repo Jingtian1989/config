@@ -28,6 +28,9 @@ public class ClientPusher implements EventListener {
         return instance;
     }
 
+    private ClientPusher(){
+    }
+
     @Override
     public void event(Event event) {
         switch (event.getType()) {
@@ -43,7 +46,7 @@ public class ClientPusher implements EventListener {
     private void schedule(Group group) {
         ServerMessage message = new ServerMessage();
         List<Record> records = MemoryStore.getInstance().query(group);
-        ClientConnection[] clients = MemoryStore.getInstance().getClients();
+        ClientConnection[] clients = MemoryStore.getInstance().getNativeClients();
         for (Record record : records) {
             MessageDigest digest = new MessageDigest(ServerMessage.SUBSCRIBER_SYNCHRONIZE_TYPE);
             digest.put("group", record.getGroup());

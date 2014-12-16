@@ -1,7 +1,6 @@
 package org.config.server.server;
 
 import org.config.common.Constants;
-import org.config.common.util.NetUtil;
 import org.config.server.domain.Group;
 import org.config.server.domain.Record;
 import org.remote.common.service.Writer;
@@ -9,6 +8,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -23,14 +25,25 @@ public class ClientConnection {
     private ConcurrentHashMap<Group, Publisher> publishers;
     private ConcurrentHashMap<Group, Subscriber> subscribers;
     private String hostId;
+    private boolean cluster;
 
     public ClientConnection(Writer writer) {
         InetSocketAddress address = (InetSocketAddress) writer.getConnection().getRemoteAddress();
         this.writer = writer;
-        this.hostId = address.getAddress().getHostAddress() +":"+ address.getPort();
         this.publishers = new ConcurrentHashMap<Group, Publisher>();
         this.subscribers = new ConcurrentHashMap<Group, Subscriber>();
+        this.hostId = address.getAddress().getHostAddress() +":"+ address.getPort();
+        this.cluster = false;
     }
+
+    public ClientConnection(Writer writer, String hostId) {
+        this.writer = writer;
+        this.publishers = new ConcurrentHashMap<Group, Publisher>();
+        this.subscribers = new ConcurrentHashMap<Group, Subscriber>();
+        this.hostId = hostId;
+        this.cluster = true;
+    }
+
 
     public void addSubscriber(Group group, String clientId) {
         subscribers.put(group, new Subscriber(group, clientId));
@@ -75,6 +88,9 @@ public class ClientConnection {
         return hostId;
     }
 
+    public boolean isClusterClient() {
+        return cluster;
+    }
 
     public String hasSubscriber(Group group) {
         Subscriber subscriber = subscribers.get(group);
@@ -85,6 +101,14 @@ public class ClientConnection {
         return clientId;
     }
 
+    public String hasPublisher(Group group) {
+        Publisher publisher = publishers.get(group);
+        String clientId = null;
+        if (publisher != null) {
+            clientId = publisher.getClientId();
+        }
+        return clientId;
+    }
 
     public Record query(Group group) {
         Publisher publisher = publishers.get(group);
@@ -98,6 +122,21 @@ public class ClientConnection {
             record.setVersion(publisher.getVersion());
         }
         return record;
+    }
+
+    public List<Record> query() {
+        List<Record> records = new LinkedList<Record>();
+        for (Map.Entry<Group, Publisher> entry : publishers.entrySet()) {
+            Group group = entry.getKey();
+            Publisher publisher = entry.getValue();
+            Record record = new Record();
+            record.setClientId(publisher.getClientId());
+            record.setDataId(publisher.getData());
+            record.setClientId(group.getGroup());
+            record.setVersion(publisher.getVersion());
+            records.add(record);
+        }
+        return records;
     }
 
     private static class Publisher {

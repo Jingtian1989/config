@@ -8,8 +8,6 @@ import org.config.common.domain.ClientMessage;
 import org.config.common.domain.MessageDigest;
 import org.config.server.server.ClientConnection;
 import org.config.server.domain.Group;
-import org.config.server.event.Event;
-import org.config.server.event.EventDispatcher;
 
 /**
  * Created by jingtian.zjt on 2014/12/9.
@@ -38,29 +36,21 @@ public class ServerService implements Processor{
 
     private void handleSubscriberRegisterRequest(MessageDigest digest, Writer writer) {
         Group group = Group.getGroup(digest.get("group"), digest.get("dataId"));
-        ClientConnection client = MemoryStore.getInstance().addClient(writer);
+        ClientConnection client = MemoryStore.getInstance().addNativeClient(writer);
         MemoryStore.getInstance().addSubscriber(client, group, digest.get("clientId"));
-        Event event = new Event(Event.SUBSCRIBER_REGISTER_EVENT);
-        event.put("group", group);
-        event.put("client", client);
-        EventDispatcher.getInstance().fire(event);
     }
 
 
     private void handlePublisherRegisterRequest(MessageDigest digest, Writer writer) {
         Group group = Group.getGroup(digest.get("group"), digest.get("dataId"));
-        ClientConnection client = MemoryStore.getInstance().addClient(writer);
+        ClientConnection client = MemoryStore.getInstance().addNativeClient(writer);
         MemoryStore.getInstance().addPublisher(client, group, digest.get("clientId"));
     }
 
     private void handlePublisherPublishRequest(MessageDigest digest, Writer writer) {
         Group group = Group.getGroup(digest.get("group"), digest.get("dataId"));
-        ClientConnection client = MemoryStore.getInstance().addClient(writer);
+        ClientConnection client = MemoryStore.getInstance().addNativeClient(writer);
         MemoryStore.getInstance().publish(client, group, digest.get("clientId"), digest.get("data"), Integer.parseInt(digest.get("version")));
-        Event event = new Event(Event.PUBLISHER_PUBLISH_EVENT);
-        event.put("group", group);
-        event.put("client", client);
-        EventDispatcher.getInstance().fire(event);
     }
 
 }
