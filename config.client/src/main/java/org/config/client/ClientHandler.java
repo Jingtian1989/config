@@ -1,6 +1,5 @@
-package org.config.client.service;
+package org.config.client;
 
-import org.config.client.*;
 import org.config.common.domain.MessageDigest;
 import org.config.common.domain.ServerMessage;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -34,7 +33,7 @@ public class ClientHandler extends SimpleChannelUpstreamHandler {
         }
     }
 
-    public class ClientUpdateThread extends Thread {
+    private class ClientUpdateThread extends Thread {
         @Override
         public void run() {
             for(;;) {
@@ -45,13 +44,13 @@ public class ClientHandler extends SimpleChannelUpstreamHandler {
                             case ServerMessage.SUBSCRIBER_REGISTER_TYPE:
                                 Subscriber subscriber = SubscriberRegistrar.query(message.getClientId());
                                 if (subscriber != null) {
-                                    subscriber.setRegistered();
+                                    subscriber.setRegistered(true);
                                 }
                                 break;
                             case ServerMessage.PUBLISHER_REGISTER_TYPE:
                                 Publisher publisher = PublisherRegistrar.query(message.getClientId());
                                 if (publisher != null) {
-                                    publisher.setRegistered();
+                                    publisher.setRegistered(true);
                                 }
                                 break;
                             case ServerMessage.SUBSCRIBER_SYNCHRONIZE_TYPE:

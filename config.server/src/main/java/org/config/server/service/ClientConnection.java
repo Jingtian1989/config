@@ -115,10 +115,10 @@ public class ClientConnection {
         Record record = null;
         if (publisher != null) {
             record = new Record();
+            record.setGroup(group.getGroup());
+            record.setDataId(group.getDataId());
             record.setClientId(publisher.getClientId());
             record.setData(publisher.getData());
-            record.setDataId(group.getDataId());
-            record.setGroup(group.getGroup());
             record.setVersion(publisher.getVersion());
         }
         return record;
@@ -130,9 +130,10 @@ public class ClientConnection {
             Group group = entry.getKey();
             Publisher publisher = entry.getValue();
             Record record = new Record();
+            record.setGroup(group.getGroup());
+            record.setDataId(group.getDataId());
             record.setClientId(publisher.getClientId());
-            record.setDataId(publisher.getData());
-            record.setClientId(group.getGroup());
+            record.setData(publisher.getData());
             record.setVersion(publisher.getVersion());
             records.add(record);
         }

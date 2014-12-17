@@ -13,8 +13,6 @@ public class PublisherBootstrap {
         ClientRegistration publisherRegistration = new ClientRegistration("publisher", "testId-01", "group-01");
         Publisher publisher = PublisherRegistrar.register(publisherRegistration);
         publisher.publish("hello, world");
-        publisher.publish("hello, world2");
-        publisher.publish("hello, world3");
         for (;;);
     }
 }

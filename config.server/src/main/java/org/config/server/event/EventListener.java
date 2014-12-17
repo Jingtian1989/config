@@ -5,5 +5,5 @@ package org.config.server.event;
  */
 public interface EventListener extends java.util.EventListener{
 
-    public void event(Event event);
+    public void handleEvent(Event event);
 }

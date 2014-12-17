@@ -16,40 +16,35 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MemoryStore {
 
-    private static final MemoryStore instance = new MemoryStore();
-    private ConcurrentHashMap<Channel, ClientConnection> natives;
-    private ConcurrentHashMap<Channel, ClientConnection> clusters;
+    private static ConcurrentHashMap<Channel, ClientConnection> natives;
+    private static ConcurrentHashMap<Channel, ClientConnection> clusters;
 
     public MemoryStore() {
         this.natives = new ConcurrentHashMap<Channel, ClientConnection>();
         this.clusters = new ConcurrentHashMap<Channel, ClientConnection>();
     }
 
-    public static MemoryStore getInstance() {
-        return instance;
-    }
-
-    public void addPublisher(ClientConnection client, Group group, String clientId) {
+    public static void addPublisher(ClientConnection client, Group group, String clientId) {
         client.addPublisher(group, clientId);
     }
 
-    public void addSubscriber(ClientConnection client, Group group, String clientId) {
+    public static void addSubscriber(ClientConnection client, Group group, String clientId) {
         client.addSubscriber(group, clientId);
         Event event = new Event(Event.SUBSCRIBER_ADD_EVENT);
         event.put("group", group);
         event.put("client", client);
-        EventDispatcher.getInstance().fire(event);
+        EventDispatcher.fire(event);
     }
 
-    public void publish(ClientConnection client, Group group, String clientId, String data, int version) {
+    public static void publish(ClientConnection client, Group group, String clientId, String data, int version) {
         client.publish(group, clientId, data, version);
         Event event = new Event(Event.DATA_PUBLISH_EVENT);
         event.put("group", group);
         event.put("client", client);
-        EventDispatcher.getInstance().fire(event);
+        EventDispatcher.fire(event);
     }
 
-    public List<Record> query(Group group) {
+    public static List<Record> query(Group group) {
         List<Record> records = new LinkedList<Record>();
         List<ClientConnection> contributors = GroupQueue.getInstance().getContributors(group);
         for (ClientConnection client : contributors) {
@@ -61,7 +56,7 @@ public class MemoryStore {
         return records;
     }
 
-    public ClientConnection addNativeClient(Channel channel) {
+    public static ClientConnection addNativeClient(Channel channel) {
         ClientConnection client = natives.get(channel);
         if (client == null) {
             client = new ClientConnection(channel);
@@ -70,7 +65,7 @@ public class MemoryStore {
         return client;
     }
 
-    public ClientConnection addClusterClient(Channel channel, String hostId) {
+    public static ClientConnection addClusterClient(Channel channel, String hostId) {
         ClientConnection client = clusters.get(channel);
         if (client == null) {
             client = new ClientConnection(channel, hostId);
@@ -79,11 +74,11 @@ public class MemoryStore {
         return client;
     }
 
-    public ClientConnection[] getNativeClients() {
+    public static ClientConnection[] getNativeClients() {
         return natives.values().toArray(new ClientConnection[0]);
     }
 
-    public ClientConnection[] getClusterClients() {
+    public static ClientConnection[] getClusterClients() {
         return clusters.values().toArray(new ClientConnection[0]);
     }
 }

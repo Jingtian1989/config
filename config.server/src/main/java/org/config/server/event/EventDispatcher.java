@@ -7,24 +7,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class EventDispatcher {
 
-    private static EventDispatcher instance = new EventDispatcher();
-    private CopyOnWriteArrayList<EventListener> listeners;
+    private static CopyOnWriteArrayList<EventListener> listeners = new CopyOnWriteArrayList<EventListener>();
 
-    private EventDispatcher() {
-        listeners = new CopyOnWriteArrayList<EventListener>();
-    }
-
-    public static EventDispatcher getInstance() {
-        return instance;
-    }
-
-    public void fire(Event event) {
+    public static void fire(Event event) {
         for (EventListener listener : listeners) {
-            listener.event(event);
+            listener.handleEvent(event);
         }
     }
 
-    public void registerListener(EventListener listener) {
+    public static void registerListener(EventListener listener) {
         listeners.add(listener);
     }
 }

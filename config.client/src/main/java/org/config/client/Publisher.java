@@ -1,7 +1,6 @@
 package org.config.client;
 
 
-import org.config.client.service.ClientWorker;
 import org.config.common.Constants;
 import org.config.common.domain.ClientMessage;
 import org.config.common.domain.MessageDigest;
@@ -24,12 +23,12 @@ public class Publisher extends ConfigClient {
     }
 
     @Override
-    public boolean isSynchronized() {
-        return getRegistered() && last.equals(version);
+    protected boolean isSynchronized() {
+        return isRegistered() && last.equals(version);
     }
 
-    public void synchronize(ClientMessage message) {
-        if (!getRegistered()) {
+    protected void synchronize(ClientMessage message) {
+        if (!isRegistered()) {
             MessageDigest digest = new MessageDigest(ClientMessage.PUBLISHER_REGISTER_TYPE);
             digest.put("clientId", getRegistration().getClientId());
             digest.put("dataId", getRegistration().getDataId());
@@ -50,7 +49,7 @@ public class Publisher extends ConfigClient {
 
     public void publish(String data) {
         if (data == null) {
-            throw new IllegalArgumentException("[CONFIG] publish null.");
+            throw new IllegalArgumentException("[CONFIG] publish data can't be null.");
         }
 
         this.data = data;

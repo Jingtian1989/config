@@ -20,15 +20,14 @@ public abstract class ConfigClient {
         return registration;
     }
 
-    public abstract boolean isSynchronized();
+    protected abstract boolean isSynchronized();
 
-
-    public boolean getRegistered() {
+    protected boolean isRegistered() {
         return registered.get();
     }
 
-    public void setRegistered() {
-        registered.set(true);
+    protected void setRegistered(boolean registered) {
+        this.registered.set(registered);
     }
 
 }

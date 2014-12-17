@@ -1,6 +1,5 @@
-package org.config.client.service;
+package org.config.client;
 
-import org.config.client.*;
 import org.config.common.domain.ClientMessage;
 import org.config.common.thread.NamedThreadFactory;
 import org.jboss.netty.bootstrap.ClientBootstrap;

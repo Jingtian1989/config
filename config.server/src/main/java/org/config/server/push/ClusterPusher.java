@@ -10,8 +10,6 @@ import org.config.server.service.ClusterConfig;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
-import org.remote.common.client.Client;
-import org.remote.common.client.ClientCallBack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +41,7 @@ public class ClusterPusher implements EventListener{
     }
 
     @Override
-    public void event(Event event) {
+    public void handleEvent(Event event) {
         switch (event.getType()) {
             case Event.DATA_PUBLISH_EVENT:
                 ClientConnection client = (ClientConnection) event.get("client");
@@ -55,7 +53,7 @@ public class ClusterPusher implements EventListener{
     }
 
     private void fullPush(ClientConnection client) {
-        List<Channel> clusterClients = ClusterConfig.getInstance().getClusterChannels();
+        List<Channel> clusters = ClusterConfig.getInstance().getClusterChannels();
         List<Record> records = client.query();
         ClusterMessage message = new ClusterMessage();
         for (Record record : records) {
@@ -63,12 +61,13 @@ public class ClusterPusher implements EventListener{
             digest.put("group", record.getGroup());
             digest.put("clientId", record.getClientId());
             digest.put("data", record.getData());
+            digest.put("dataId", record.getDataId());
             digest.put("version", String.valueOf(record.getVersion()));
             message.addDigest(digest);
         }
         if (message.getDigests().size() > 0) {
             message.setHostId(client.getHostId());
-            for (Channel cluster : clusterClients) {
+            for (Channel cluster : clusters) {
                 ChannelFuture future = cluster.write(message);
                 future.addListener(new ClusterPushListener(client, cluster));
             }

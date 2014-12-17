@@ -14,7 +14,6 @@ import java.util.concurrent.*;
 public class GroupQueue implements EventListener {
 
     private static final GroupQueue instance = new GroupQueue();
-
     private ConcurrentHashMap<Group, CopyOnWriteArrayList<ClientConnection>> contributors;
     private BlockingQueue<Event> events;
     private GroupQueueThread worker;
@@ -31,7 +30,7 @@ public class GroupQueue implements EventListener {
     }
 
     @Override
-    public void event(Event event) {
+    public void handleEvent(Event event) {
         switch (event.getType()) {
             case Event.DATA_PUBLISH_EVENT:
                 events.offer(event);
@@ -47,7 +46,7 @@ public class GroupQueue implements EventListener {
         Event event = new Event(Event.GDATA_CHANGE_EVENT);
         event.put("group", group);
         event.put("client", client);
-        EventDispatcher.getInstance().fire(event);
+        EventDispatcher.fire(event);
     }
 
     public List<ClientConnection> getContributors(Group group) {
@@ -80,5 +79,4 @@ public class GroupQueue implements EventListener {
             }
         }
     }
-
 }

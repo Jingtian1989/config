@@ -41,7 +41,7 @@ public class ClientPusher implements EventListener {
     }
 
     @Override
-    public void event(Event event) {
+    public void handleEvent(Event event) {
         switch (event.getType()) {
             case Event.SUBSCRIBER_ADD_EVENT:
                 tasks.offer(new ClientPushTask((Group) event.get("group"), (ClientConnection)event.get("client")));
@@ -54,8 +54,8 @@ public class ClientPusher implements EventListener {
 
     private void fullPush(final Group group) {
         ServerMessage message = new ServerMessage();
-        List<Record> records = MemoryStore.getInstance().query(group);
-        ClientConnection[] clients = MemoryStore.getInstance().getNativeClients();
+        List<Record> records = MemoryStore.query(group);
+        ClientConnection[] clients = MemoryStore.getNativeClients();
         for (Record record : records) {
             MessageDigest digest = new MessageDigest(ServerMessage.SUBSCRIBER_SYNCHRONIZE_TYPE);
             digest.put("group", record.getGroup());
@@ -79,7 +79,7 @@ public class ClientPusher implements EventListener {
 
     private void singlePush(final Group group, final ClientConnection client) {
         ServerMessage message = new ServerMessage();
-        List<Record> records = MemoryStore.getInstance().query(group);
+        List<Record> records = MemoryStore.query(group);
         for (Record record : records) {
             MessageDigest digest = new MessageDigest(ServerMessage.SUBSCRIBER_SYNCHRONIZE_TYPE);
             digest.put("group", record.getGroup());

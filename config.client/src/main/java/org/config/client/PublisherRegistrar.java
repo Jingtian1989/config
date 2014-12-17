@@ -28,7 +28,16 @@ public class PublisherRegistrar{
         return publisher;
     }
 
-    public static Publisher[] getPublishers() {
+
+    public static void unregister(ClientRegistration registration) {
+        Publisher publisher = query(registration);
+        if (publisher != null) {
+            publishers.remove(registration.getClientId());
+
+        }
+    }
+
+    protected static Publisher[] getPublishers() {
         return publishers.values().toArray(new Publisher[0]);
     }
 

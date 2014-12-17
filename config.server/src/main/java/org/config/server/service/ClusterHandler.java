@@ -50,11 +50,11 @@ public class ClusterHandler extends SimpleChannelUpstreamHandler {
 
     private void handlSyncRequest(MessageDigest digest, Channel channel, String hostId) {
         Group group = Group.getGroup(digest.get("group"), digest.get("dataId"));
-        ClientConnection client = MemoryStore.getInstance().addClusterClient(channel, hostId);
+        ClientConnection client = MemoryStore.addClusterClient(channel, hostId);
         if (client.hasPublisher(group) == null) {
             client.addPublisher(group, digest.get("clientId"));
         }
-        MemoryStore.getInstance().publish(client, group, digest.get("clientId"), digest.get("data"),
+        MemoryStore.publish(client, group, digest.get("clientId"), digest.get("data"),
                 Integer.parseInt(digest.get("version")));
     }
 

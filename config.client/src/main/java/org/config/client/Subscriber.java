@@ -20,12 +20,12 @@ public class Subscriber extends ConfigClient {
     }
 
     @Override
-    public boolean isSynchronized() {
-        return getRegistered();
+    protected boolean isSynchronized() {
+        return isRegistered();
     }
 
-    public void synchronize(ClientMessage message) {
-        if (!getRegistered()) {
+    protected void synchronize(ClientMessage message) {
+        if (!isRegistered()) {
             MessageDigest digest = new MessageDigest(ClientMessage.SUBSCRIBER_REGISTER_TYPE);
             digest.put("clientId", getRegistration().getClientId());
             digest.put("dataId", getRegistration().getDataId());
@@ -41,7 +41,7 @@ public class Subscriber extends ConfigClient {
         }
     }
 
-    public void update(String group, String dataId, String data) {
+    protected void update(String group, String dataId, String data) {
         ClientRegistration registration = getRegistration();
         if (registration.getGroup().equals(group) && registration.getDataId().equals(dataId)) {
             this.data = data;

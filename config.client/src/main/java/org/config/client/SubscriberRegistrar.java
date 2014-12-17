@@ -1,8 +1,6 @@
 package org.config.client;
 
 
-import org.config.client.service.ClientWorker;
-
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -31,7 +29,7 @@ public class SubscriberRegistrar {
         return subscribers.get(clientId);
     }
 
-    public static Subscriber[] getSubscribers() {
+    protected static Subscriber[] getSubscribers() {
         return subscribers.values().toArray(new Subscriber[0]);
     }
 }
