@@ -23,7 +23,9 @@ public class Publisher extends ConfigClient {
 
     @Override
     protected boolean isSynchronized() {
-        return getState() == ConfigClient.CLIENT_REGISTERED && last.equals(version);
+        boolean a1 =  getState() == ConfigClient.CLIENT_REGISTERED;
+        boolean a2 =  last.get() == version.get();
+        return a1 && a2;
     }
 
     protected void synchronize(ClientMessage message) {
@@ -65,10 +67,9 @@ public class Publisher extends ConfigClient {
 
     public void update(String group, String dataId, int version) {
         if (getRegistration().getGroup().equals(group) && getRegistration().getDataId().equals(dataId)) {
-            if (this.version.equals(version)) {
+            if (this.version.get() >= version && this.last.get() <= version) {
                 last.set(version);
             }
         }
     }
-
 }

@@ -58,6 +58,7 @@ public class MemoryStore {
         Event event = new Event(Event.PUBLISHER_PUBLISH_EVENT);
         event.put("group", group);
         event.put("client", client);
+        event.put("version", version);
         EventDispatcher.fire(event);
     }
 

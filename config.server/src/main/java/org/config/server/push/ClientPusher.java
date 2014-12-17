@@ -58,6 +58,37 @@ public class ClientPusher implements EventListener {
             case Event.PUBLISHER_UNREGISTER_EVENT:
                 tasks.offer(new ClientPushPublisherUnregisterTask((Group) event.get("group"), (ClientConnection) event.get("client"), (String)event.get("clientId")));
                 break;
+            case Event.PUBLISHER_PUBLISH_EVENT:
+                tasks.offer(new ClientPushPublisherPublishTask((Group) event.get("group"), (ClientConnection) event.get("client"), (Integer)event.get("version")));
+                break;
+        }
+    }
+
+    private class ClientPushPublisherPublishTask implements Runnable {
+
+        private Group group;
+        private ClientConnection client;
+        private int version;
+
+        public ClientPushPublisherPublishTask(Group group, ClientConnection client, int version) {
+            this.group = group;
+            this.client = client;
+            this.version = version;
+        }
+
+        @Override
+        public void run() {
+            String clientId = client.hasPublisher(group);
+            if (client.getChannel().isConnected() && clientId != null) {
+                ServerMessage message = new ServerMessage();
+                message.setClientId(clientId);
+                MessageDigest digest = new MessageDigest(ServerMessage.PUBLISHER_PUBLISH_TYPE);
+                digest.put("group", group.getGroup());
+                digest.put("dataId", group.getDataId());
+                digest.put("version", String.valueOf(version));
+                message.addDigest(digest);
+                client.getChannel().write(message);
+            }
         }
     }
 
@@ -200,10 +231,10 @@ public class ClientPusher implements EventListener {
             String clientId = client.hasPublisher(group);
             ServerMessage message = new ServerMessage();
             if (client.getChannel().isConnected() && clientId != null) {
+                message.setClientId(clientId);
                 MessageDigest digest = new MessageDigest(ServerMessage.PUBLISHER_REGISTER_TYPE);
                 digest.put("group", group.getGroup());
                 digest.put("dataId", group.getDataId());
-                digest.put("clientId", clientId);
                 message.addDigest(digest);
                 ChannelFuture future = client.getChannel().write(message);
                 future.addListener(new ClientPushListener(this));

@@ -14,7 +14,6 @@ public class SubscriberBootstrap {
         ClientRegistration subscriberRegistration = new ClientRegistration("subscriber", "testId-01", "group-01");
         Subscriber subscriber = SubscriberRegistrar.register(subscriberRegistration);
         subscriber.addObserver(new EchoObserver());
-        for (;;);
     }
 
     public static class EchoObserver implements Observer {
