@@ -13,9 +13,10 @@ public class ServerMessage implements Serializable{
 
     public static final int PUBLISHER_REGISTER_TYPE     = 0x01;
     public static final int PUBLISHER_UNREGISTER_TYPE   = 0x02;
-    public static final int SUBSCRIBER_REGISTER_TYPE    = 0X02;
-    public static final int SUBSCRIBER_UNREGISTER_TYPE  = 0x03;
-    public static final int SUBSCRIBER_SYNCHRONIZE_TYPE = 0x03;
+    public static final int SUBSCRIBER_REGISTER_TYPE    = 0X03;
+    public static final int SUBSCRIBER_UNREGISTER_TYPE  = 0x04;
+    public static final int SUBSCRIBER_SYNCHRONIZE_TYPE = 0x05;
+    public static final int PUBLISHER_PUBLISH_TYPE      = 0x06;
 
     private List<MessageDigest> digests;
 

@@ -44,19 +44,25 @@ public class ClientHandler extends SimpleChannelUpstreamHandler {
                             case ServerMessage.SUBSCRIBER_REGISTER_TYPE:
                                 Subscriber subscriber = SubscriberRegistrar.query(message.getClientId());
                                 if (subscriber != null) {
-                                    subscriber.setRegistered(true);
+                                    subscriber.setState(ConfigClient.CLIENT_REGISTERED);
                                 }
                                 break;
                             case ServerMessage.PUBLISHER_REGISTER_TYPE:
                                 Publisher publisher = PublisherRegistrar.query(message.getClientId());
                                 if (publisher != null) {
-                                    publisher.setRegistered(true);
+                                    publisher.setState(ConfigClient.CLIENT_REGISTERED);
                                 }
                                 break;
                             case ServerMessage.SUBSCRIBER_SYNCHRONIZE_TYPE:
                                 subscriber = SubscriberRegistrar.query(message.getClientId());
                                 if (subscriber != null) {
                                     subscriber.update(digest.get("group"), digest.get("dataId"), digest.get("data"));
+                                }
+                                break;
+                            case ServerMessage.PUBLISHER_PUBLISH_TYPE:
+                                publisher = PublisherRegistrar.query(message.getClientId());
+                                if (publisher != null) {
+                                    publisher.update(digest.get("group"), digest.get("dataId"), Integer.parseInt(digest.get("version")));
                                 }
                                 break;
                         }

@@ -62,4 +62,13 @@ public class Publisher extends ConfigClient {
         this.version.incrementAndGet();
         ClientWorker.getInstance().signal();
     }
+
+    public void update(String group, String dataId, int version) {
+        if (getRegistration().getGroup().equals(group) && getRegistration().getDataId().equals(dataId)) {
+            if (this.version.equals(version)) {
+                last.set(version);
+            }
+        }
+    }
+
 }

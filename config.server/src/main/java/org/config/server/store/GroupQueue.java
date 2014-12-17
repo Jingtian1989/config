@@ -86,6 +86,7 @@ public class GroupQueue implements EventListener {
                             break;
                         case Event.PUBLISHER_UNREGISTER_EVENT:
                             handlePublisherUnregisterEvent((Group)event.get("group"), (ClientConnection)event.get("client"));
+                            break;
                     }
                 }
             }
