@@ -21,6 +21,14 @@ public class SubscriberRegistrar {
         return subscriber;
     }
 
+    public static void unregister(ClientRegistration registration) {
+        Subscriber subscriber = query(registration);
+        if (subscriber != null) {
+            subscriber.setState(ConfigClient.CLIENT_UNREGISTERED);
+            ClientWorker.getInstance().signal();
+        }
+    }
+
     public static Subscriber query(ClientRegistration registration) {
         return subscribers.get(registration.getClientId());
     }

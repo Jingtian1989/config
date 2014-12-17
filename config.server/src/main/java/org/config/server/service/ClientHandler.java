@@ -34,8 +34,22 @@ public class ClientHandler extends SimpleChannelUpstreamHandler {
                 case ClientMessage.SUBSCRIBER_REGISTER_TYPE:
                     handleSubscriberRegisterRequest(digest, channel);
                     break;
+                case ClientMessage.PUBLISHER_UNREGISTER_TYPE:
+                    handlePublisherUnregisterRequest(digest, channel);
+                    break;
+                case ClientMessage.SUBSCRIBER_UNREGISTER_TYPE:
+                    handleSubscriberUnregisterRequest(digest, channel);
+                    break;
             }
         }
+    }
+
+    private void handleSubscriberUnregisterRequest(MessageDigest digest, Channel channel) {
+
+    }
+
+    private void handlePublisherUnregisterRequest(MessageDigest digest, Channel channel) {
+
     }
 
     private void handleSubscriberRegisterRequest(MessageDigest digest, Channel channel) {

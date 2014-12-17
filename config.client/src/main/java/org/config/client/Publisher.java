@@ -23,11 +23,11 @@ public class Publisher extends ConfigClient {
 
     @Override
     protected boolean isSynchronized() {
-        return isRegistered() && last.equals(version);
+        return getState() == ConfigClient.CLIENT_REGISTERED && last.equals(version);
     }
 
     protected void synchronize(ClientMessage message) {
-        if (!isRegistered()) {
+        if (getState() == ConfigClient.CLIENT_UNINITED) {
             MessageDigest digest = new MessageDigest(ClientMessage.PUBLISHER_REGISTER_TYPE);
             digest.put("clientId", getRegistration().getClientId());
             digest.put("dataId", getRegistration().getDataId());
@@ -35,13 +35,21 @@ public class Publisher extends ConfigClient {
             message.addDigest(digest);
         }
 
-        if (!last.equals(version)) {
+        if (getState() == ConfigClient.CLIENT_REGISTERED && !last.equals(version)) {
             MessageDigest digest = new MessageDigest(ClientMessage.PUBLISHER_PUBLISH_TYPE);
             digest.put("clientId", getRegistration().getClientId());
             digest.put("dataId", getRegistration().getDataId());
             digest.put("group", getRegistration().getGroup());
             digest.put("data", data);
             digest.put("version", String.valueOf(version));
+            message.addDigest(digest);
+        }
+
+        if (getState() == ConfigClient.CLIENT_UNREGISTERED) {
+            MessageDigest digest = new MessageDigest(ClientMessage.PUBLISHER_UNREGISTER_TYPE);
+            digest.put("clientId", getRegistration().getClientId());
+            digest.put("dataId", getRegistration().getDataId());
+            digest.put("group", getRegistration().getGroup());
             message.addDigest(digest);
         }
     }

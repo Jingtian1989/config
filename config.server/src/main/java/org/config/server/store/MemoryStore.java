@@ -21,6 +21,10 @@ public class MemoryStore {
 
     public static void addPublisher(ClientConnection client, Group group, String clientId) {
         client.addPublisher(group, clientId);
+        Event event = new Event(Event.PUBLISHER_ADD_EVENT);
+        event.put("group", group);
+        event.put("client", client);
+        EventDispatcher.fire(event);
     }
 
     public static void addSubscriber(ClientConnection client, Group group, String clientId) {

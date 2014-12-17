@@ -46,13 +46,15 @@ public class ClientPusher implements EventListener {
             case Event.SUBSCRIBER_ADD_EVENT:
                 tasks.offer(new ClientPushTask((Group) event.get("group"), (ClientConnection)event.get("client")));
                 break;
+            case Event.PUBLISHER_ADD_EVENT:
+                break;
             case Event.GDATA_CHANGE_EVENT:
                 tasks.offer(new ClientPushTask((Group) event.get("group"), null));
                 break;
         }
     }
 
-    private void fullPush(final Group group) {
+    private void fullPush(Group group) {
         ServerMessage message = new ServerMessage();
         List<Record> records = MemoryStore.query(group);
         ClientConnection[] clients = MemoryStore.getNativeClients();
@@ -120,7 +122,6 @@ public class ClientPusher implements EventListener {
             }
         }
     }
-
 
     public class ClientPushTask implements Runnable {
 

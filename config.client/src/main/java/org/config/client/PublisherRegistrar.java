@@ -32,8 +32,8 @@ public class PublisherRegistrar{
     public static void unregister(ClientRegistration registration) {
         Publisher publisher = query(registration);
         if (publisher != null) {
-            publishers.remove(registration.getClientId());
-
+            publisher.setState(ConfigClient.CLIENT_UNREGISTERED);
+            ClientWorker.getInstance().signal();
         }
     }
 

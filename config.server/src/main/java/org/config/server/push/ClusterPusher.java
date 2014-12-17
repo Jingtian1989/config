@@ -114,7 +114,6 @@ public class ClusterPusher implements EventListener{
         }
     }
 
-
     public class ClusterPushTask implements Runnable {
 
         Channel cluster;

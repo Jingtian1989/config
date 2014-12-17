@@ -15,6 +15,10 @@ public class ClientMessage implements Serializable {
     public static final int SUBSCRIBER_REGISTER_TYPE = 0x02;
     public static final int PUBLISHER_PUBLISH_TYPE = 0x03;
 
+
+    public static final int PUBLISHER_UNREGISTER_TYPE = 0x04;
+    public static final int SUBSCRIBER_UNREGISTER_TYPE = 0x05;
+
     private List<MessageDigest> digests;
 
     public ClientMessage() {

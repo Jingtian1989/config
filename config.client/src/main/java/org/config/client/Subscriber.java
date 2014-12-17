@@ -21,12 +21,20 @@ public class Subscriber extends ConfigClient {
 
     @Override
     protected boolean isSynchronized() {
-        return isRegistered();
+        return getState() == ConfigClient.CLIENT_REGISTERED;
     }
 
     protected void synchronize(ClientMessage message) {
-        if (!isRegistered()) {
+        if (getState() == ConfigClient.CLIENT_UNINITED) {
             MessageDigest digest = new MessageDigest(ClientMessage.SUBSCRIBER_REGISTER_TYPE);
+            digest.put("clientId", getRegistration().getClientId());
+            digest.put("dataId", getRegistration().getDataId());
+            digest.put("group", getRegistration().getGroup());
+            message.addDigest(digest);
+        }
+
+        if (getState() == ConfigClient.CLIENT_UNREGISTERED) {
+            MessageDigest digest = new MessageDigest(ClientMessage.SUBSCRIBER_UNREGISTER_TYPE);
             digest.put("clientId", getRegistration().getClientId());
             digest.put("dataId", getRegistration().getDataId());
             digest.put("group", getRegistration().getGroup());
