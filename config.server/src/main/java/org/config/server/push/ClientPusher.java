@@ -6,14 +6,18 @@ import org.config.server.domain.Group;
 import org.config.server.domain.Record;
 import org.config.server.event.Event;
 import org.config.server.event.EventListener;
-import org.config.server.server.ClientConnection;
+import org.config.server.service.ClientConnection;
 import org.config.server.store.MemoryStore;
-import org.remote.common.client.ClientCallBack;
-import org.remote.common.exception.CodecsException;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.ConnectException;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by jingtian.zjt on 2014/12/15.
@@ -21,29 +25,34 @@ import java.util.List;
 public class ClientPusher implements EventListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientPusher.class);
-
     private static final ClientPusher instance = new ClientPusher();
+    private static final int TIMEOUT = 300;
+    private BlockingQueue<Runnable> tasks;
+    private ClientPushThread worker;
 
     public static ClientPusher getInstance() {
         return instance;
     }
 
     private ClientPusher(){
+        this.tasks = new LinkedBlockingQueue<Runnable>();
+        this.worker = new ClientPushThread();
+        worker.start();
     }
 
     @Override
     public void event(Event event) {
         switch (event.getType()) {
-            case Event.SUBSCRIBER_REGISTER_EVENT:
-                schedule((Group) event.get("group"), (ClientConnection) event.get("client"));
+            case Event.SUBSCRIBER_ADD_EVENT:
+                tasks.offer(new ClientPushTask((Group) event.get("group"), (ClientConnection)event.get("client")));
                 break;
-            case Event.GROUPDATA_CHANGE_EVENT:
-                schedule((Group) event.get("group"));
+            case Event.GDATA_CHANGE_EVENT:
+                tasks.offer(new ClientPushTask((Group) event.get("group"), null));
                 break;
         }
     }
 
-    private void schedule(Group group) {
+    private void fullPush(final Group group) {
         ServerMessage message = new ServerMessage();
         List<Record> records = MemoryStore.getInstance().query(group);
         ClientConnection[] clients = MemoryStore.getInstance().getNativeClients();
@@ -55,23 +64,20 @@ public class ClientPusher implements EventListener {
             message.addDigest(digest);
         }
         if (message.getDigests().size() > 0) {
-            for (ClientConnection client : clients) {
-                if (client.getWriter().getConnection().isConnected()) {
+            for (final ClientConnection client : clients) {
+                if (client.getChannel().isConnected()) {
                     String clientId = null;
                     if ((clientId = client.hasSubscriber(group)) != null) {
                         message.setClientId(clientId);
-                        try {
-                            client.getWriter().request(message, new ClientPushCallBack());
-                        } catch (CodecsException e) {
-                            LOGGER.error("[CONFIG] encode request failed. exception:", e);
-                        }
+                        ChannelFuture future = client.getChannel().write(message);
+                        future.addListener(new ClientPushListener(group, client));
                     }
                 }
             }
         }
     }
 
-    private void schedule(Group group, ClientConnection client) {
+    private void singlePush(final Group group, final ClientConnection client) {
         ServerMessage message = new ServerMessage();
         List<Record> records = MemoryStore.getInstance().query(group);
         for (Record record : records) {
@@ -82,30 +88,75 @@ public class ClientPusher implements EventListener {
             message.addDigest(digest);
         }
         if (message.getDigests().size() > 0) {
-            if (client.getWriter().getConnection().isConnected()) {
+            if (client.getChannel().isConnected()) {
                 String clientId = null;
                 if ((clientId = client.hasSubscriber(group)) != null) {
                     message.setClientId(clientId);
-                    try {
-                        client.getWriter().request(message, new ClientPushCallBack());
-                    } catch (CodecsException e) {
-                        LOGGER.error("[CONFIG] encode request failed. exception:", e);
-                    }
+                    ChannelFuture future = client.getChannel().write(message);
+                    future.addListener(new ClientPushListener(group, client));
                 }
             }
         }
     }
 
-    private class ClientPushCallBack implements ClientCallBack{
+    public class ClientPushListener implements ChannelFutureListener {
 
-        @Override
-        public void handleResponse(Object data) {
+        private Group group;
+        private ClientConnection client;
 
+        public ClientPushListener(Group group, ClientConnection client) {
+            this.group = group;
+            this.client = client;
         }
 
         @Override
-        public void handleException(Exception e) {
-
+        public void operationComplete(ChannelFuture future) throws Exception {
+            if (!future.isSuccess()) {
+                LOGGER.error("[CONFIG] push to client " + future.getChannel().getRemoteAddress() + " failed. cause:" +
+                        future.getCause());
+                if (!(future.getCause() instanceof ConnectException)) {
+                    tasks.offer(new ClientPushTask(group, client));
+                }
+            }
         }
     }
+
+
+    public class ClientPushTask implements Runnable {
+
+        private Group group;
+        private ClientConnection client;
+
+        public ClientPushTask(Group group, ClientConnection client) {
+            this.client = client;
+            this.group = group;
+        }
+
+        @Override
+        public void run() {
+            if (client  == null) {
+                fullPush(group);
+            } else {
+                singlePush(group, client);
+            }
+        }
+    }
+
+    public class ClientPushThread extends Thread {
+
+        @Override
+        public void run() {
+            for (;;) {
+                Runnable task = null;
+                try {
+                    task = tasks.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e){
+                }
+                if (task != null) {
+                    task.run();
+                }
+            }
+        }
+    }
+
 }

@@ -3,10 +3,9 @@ package org.config.server.store;
 import org.config.server.domain.Record;
 import org.config.server.event.Event;
 import org.config.server.event.EventDispatcher;
-import org.config.server.server.ClientConnection;
+import org.config.server.service.ClientConnection;
 import org.config.server.domain.Group;
-import org.remote.common.server.Connection;
-import org.remote.common.service.Writer;
+import org.jboss.netty.channel.Channel;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -18,12 +17,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MemoryStore {
 
     private static final MemoryStore instance = new MemoryStore();
-    private ConcurrentHashMap<Connection, ClientConnection> natives;
-    private ConcurrentHashMap<Connection, ClientConnection> clusters;
+    private ConcurrentHashMap<Channel, ClientConnection> natives;
+    private ConcurrentHashMap<Channel, ClientConnection> clusters;
 
     public MemoryStore() {
-        this.natives = new ConcurrentHashMap<Connection, ClientConnection>();
-        this.clusters = new ConcurrentHashMap<Connection, ClientConnection>();
+        this.natives = new ConcurrentHashMap<Channel, ClientConnection>();
+        this.clusters = new ConcurrentHashMap<Channel, ClientConnection>();
     }
 
     public static MemoryStore getInstance() {
@@ -36,7 +35,7 @@ public class MemoryStore {
 
     public void addSubscriber(ClientConnection client, Group group, String clientId) {
         client.addSubscriber(group, clientId);
-        Event event = new Event(Event.SUBSCRIBER_REGISTER_EVENT);
+        Event event = new Event(Event.SUBSCRIBER_ADD_EVENT);
         event.put("group", group);
         event.put("client", client);
         EventDispatcher.getInstance().fire(event);
@@ -44,7 +43,7 @@ public class MemoryStore {
 
     public void publish(ClientConnection client, Group group, String clientId, String data, int version) {
         client.publish(group, clientId, data, version);
-        Event event = new Event(Event.PUBLISHER_PUBLISH_EVENT);
+        Event event = new Event(Event.DATA_PUBLISH_EVENT);
         event.put("group", group);
         event.put("client", client);
         EventDispatcher.getInstance().fire(event);
@@ -62,20 +61,20 @@ public class MemoryStore {
         return records;
     }
 
-    public ClientConnection addNativeClient(Writer writer) {
-        ClientConnection client = natives.get(writer.getConnection());
+    public ClientConnection addNativeClient(Channel channel) {
+        ClientConnection client = natives.get(channel);
         if (client == null) {
-            client = new ClientConnection(writer);
-            natives.put(writer.getConnection(), client);
+            client = new ClientConnection(channel);
+            natives.put(channel, client);
         }
         return client;
     }
 
-    public ClientConnection addClusterClient(Writer writer, String hostId) {
-        ClientConnection client = clusters.get(writer.getConnection());
+    public ClientConnection addClusterClient(Channel channel, String hostId) {
+        ClientConnection client = clusters.get(channel);
         if (client == null) {
-            client = new ClientConnection(writer, hostId);
-            clusters.put(writer.getConnection(), client);
+            client = new ClientConnection(channel, hostId);
+            clusters.put(channel, client);
         }
         return client;
     }

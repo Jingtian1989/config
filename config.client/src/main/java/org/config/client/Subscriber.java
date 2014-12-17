@@ -44,6 +44,7 @@ public class Subscriber extends ConfigClient {
     public void update(String group, String dataId, String data) {
         ClientRegistration registration = getRegistration();
         if (registration.getGroup().equals(group) && registration.getDataId().equals(dataId)) {
+            this.data = data;
             for (Observer observer : observers) {
                 observer.update(data);
             }

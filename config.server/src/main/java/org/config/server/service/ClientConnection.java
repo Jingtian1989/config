@@ -1,9 +1,9 @@
-package org.config.server.server;
+package org.config.server.service;
 
 import org.config.common.Constants;
 import org.config.server.domain.Group;
 import org.config.server.domain.Record;
-import org.remote.common.service.Writer;
+import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,23 +21,23 @@ public class ClientConnection {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientConnection.class);
 
-    private Writer writer;
+    private Channel channel;
     private ConcurrentHashMap<Group, Publisher> publishers;
     private ConcurrentHashMap<Group, Subscriber> subscribers;
     private String hostId;
     private boolean cluster;
 
-    public ClientConnection(Writer writer) {
-        InetSocketAddress address = (InetSocketAddress) writer.getConnection().getRemoteAddress();
-        this.writer = writer;
+    public ClientConnection(Channel channel) {
+        InetSocketAddress address = (InetSocketAddress) channel.getRemoteAddress();
+        this.channel = channel;
         this.publishers = new ConcurrentHashMap<Group, Publisher>();
         this.subscribers = new ConcurrentHashMap<Group, Subscriber>();
         this.hostId = address.getAddress().getHostAddress() +":"+ address.getPort();
         this.cluster = false;
     }
 
-    public ClientConnection(Writer writer, String hostId) {
-        this.writer = writer;
+    public ClientConnection(Channel channel, String hostId) {
+        this.channel = channel;
         this.publishers = new ConcurrentHashMap<Group, Publisher>();
         this.subscribers = new ConcurrentHashMap<Group, Subscriber>();
         this.hostId = hostId;
@@ -57,7 +57,7 @@ public class ClientConnection {
                 return true;
             } else {
                 LOGGER.error("[CONFIG] conflict publisher register from "
-                        + writer.getConnection().getRemoteAddress() + " clientId:" + clientId);
+                        + channel.getRemoteAddress() + " clientId:" + clientId);
                 return false;
             }
         }
@@ -80,8 +80,8 @@ public class ClientConnection {
         publisher.update(data, version);
     }
 
-    public Writer getWriter(){
-        return writer;
+    public Channel getChannel(){
+        return channel;
     }
 
     public String getHostId() {

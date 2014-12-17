@@ -1,6 +1,6 @@
 package org.config.server.service;
 
-import org.remote.common.client.Client;
+import org.jboss.netty.channel.Channel;
 
 import java.util.List;
 
@@ -15,7 +15,7 @@ public class ClusterConfig {
         return instance;
     }
 
-    public List<Client> getClusterClients() {
+    public List<Channel> getClusterChannels() {
         return null;
     }
 }

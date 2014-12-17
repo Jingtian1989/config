@@ -1,34 +1,37 @@
 package org.config.client.service;
 
 import org.config.client.*;
-import org.remote.common.annotation.TargetType;
 import org.config.common.domain.MessageDigest;
 import org.config.common.domain.ServerMessage;
-import org.remote.common.service.Processor;
-import org.remote.common.service.Writer;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
- * Created by jingtian.zjt on 2014/12/13.
+ * Created by jingtian.zjt on 2014/12/17.
  */
-@TargetType(value = ServerMessage.class)
-public class ClientService implements Processor {
+public class ClientHandler extends SimpleChannelUpstreamHandler {
 
     private BlockingQueue<ServerMessage> messages;
     private ClientUpdateThread worker;
 
-    public ClientService() {
+
+    public ClientHandler() {
         this.messages = new LinkedBlockingQueue<ServerMessage>();
         this.worker = new ClientUpdateThread();
         this.worker.start();
     }
 
     @Override
-    public void handleMessage(Object o, Writer responseWriter) {
-        ServerMessage message = (ServerMessage) o;
-        messages.offer(message);
+    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
+        Object object = e.getMessage();
+        if (object instanceof ServerMessage) {
+            ServerMessage message = (ServerMessage) object;
+            messages.offer(message);
+        }
     }
 
     public class ClientUpdateThread extends Thread {
@@ -63,6 +66,4 @@ public class ClientService implements Processor {
             }
         }
     }
-
-
 }

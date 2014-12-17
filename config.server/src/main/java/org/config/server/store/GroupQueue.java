@@ -4,7 +4,7 @@ import org.config.server.domain.Group;
 import org.config.server.event.Event;
 import org.config.server.event.EventDispatcher;
 import org.config.server.event.EventListener;
-import org.config.server.server.ClientConnection;
+import org.config.server.service.ClientConnection;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -16,14 +16,14 @@ public class GroupQueue implements EventListener {
     private static final GroupQueue instance = new GroupQueue();
 
     private ConcurrentHashMap<Group, CopyOnWriteArrayList<ClientConnection>> contributors;
-    private BlockingQueue<Event> eventQueue;
-    private QueueWorker queueWorker;
+    private BlockingQueue<Event> events;
+    private GroupQueueThread worker;
 
     private GroupQueue() {
         contributors = new ConcurrentHashMap<Group, CopyOnWriteArrayList<ClientConnection>>();
-        eventQueue = new LinkedBlockingQueue<Event>();
-        queueWorker = new QueueWorker();
-        queueWorker.start();
+        events = new LinkedBlockingQueue<Event>();
+        worker = new GroupQueueThread();
+        worker.start();
     }
 
     public static GroupQueue getInstance() {
@@ -33,8 +33,8 @@ public class GroupQueue implements EventListener {
     @Override
     public void event(Event event) {
         switch (event.getType()) {
-            case Event.PUBLISHER_PUBLISH_EVENT:
-                eventQueue.offer(event);
+            case Event.DATA_PUBLISH_EVENT:
+                events.offer(event);
                 break;
         }
     }
@@ -44,7 +44,7 @@ public class GroupQueue implements EventListener {
         if (!contributors.contains(client)) {
             contributors.add(client);
         }
-        Event event = new Event(Event.GROUPDATA_CHANGE_EVENT);
+        Event event = new Event(Event.GDATA_CHANGE_EVENT);
         event.put("group", group);
         event.put("client", client);
         EventDispatcher.getInstance().fire(event);
@@ -59,7 +59,7 @@ public class GroupQueue implements EventListener {
         return clients;
     }
 
-    private class QueueWorker extends Thread {
+    private class GroupQueueThread extends Thread {
 
         public static final int TIMEOUT = 300;
         @Override
@@ -67,12 +67,12 @@ public class GroupQueue implements EventListener {
             for (;;) {
                 Event event = null;
                 try {
-                     event = eventQueue.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+                     event = events.poll(TIMEOUT, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
                 }
                 if (event != null) {
                     switch (event.getType()) {
-                        case Event.PUBLISHER_PUBLISH_EVENT:
+                        case Event.DATA_PUBLISH_EVENT:
                             handlePublishEvent((Group)event.get("group"), (ClientConnection)event.get("client"));
                             break;
                     }
