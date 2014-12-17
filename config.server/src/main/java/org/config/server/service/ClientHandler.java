@@ -45,11 +45,19 @@ public class ClientHandler extends SimpleChannelUpstreamHandler {
     }
 
     private void handleSubscriberUnregisterRequest(MessageDigest digest, Channel channel) {
-
+        Group group = Group.getGroup(digest.get("group"), digest.get("dataId"));
+        ClientConnection client = MemoryStore.getNativeClient(channel);
+        if (client != null) {
+            MemoryStore.deleteSubscriber(client, group, digest.get("clientId"));
+        }
     }
 
     private void handlePublisherUnregisterRequest(MessageDigest digest, Channel channel) {
-
+        Group group = Group.getGroup(digest.get("group"), digest.get("dataId"));
+        ClientConnection client = MemoryStore.getNativeClient(channel);
+        if (client != null) {
+            MemoryStore.deletePublisher(client, group, digest.get("clientId"));
+        }
     }
 
     private void handleSubscriberRegisterRequest(MessageDigest digest, Channel channel) {
@@ -68,7 +76,6 @@ public class ClientHandler extends SimpleChannelUpstreamHandler {
     private void handlePublisherPublishRequest(MessageDigest digest, Channel channel) {
         Group group = Group.getGroup(digest.get("group"), digest.get("dataId"));
         ClientConnection client = MemoryStore.addNativeClient(channel);
-        MemoryStore.publish(client, group, digest.get("clientId"), digest.get("data"),
-                Integer.parseInt(digest.get("version")));
+        MemoryStore.publish(client, group, digest.get("clientId"), digest.get("data"),Integer.parseInt(digest.get("version")));
     }
 }

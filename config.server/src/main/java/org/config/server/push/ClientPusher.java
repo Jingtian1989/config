@@ -43,72 +43,180 @@ public class ClientPusher implements EventListener {
     @Override
     public void handleEvent(Event event) {
         switch (event.getType()) {
-            case Event.SUBSCRIBER_ADD_EVENT:
-                tasks.offer(new ClientPushTask((Group) event.get("group"), (ClientConnection)event.get("client")));
+            case Event.SUBSCRIBER_REGISTER_EVENT:
+                tasks.offer(new ClientPushSubscriberRegisterTask((Group) event.get("group"), (ClientConnection)event.get("client")));
                 break;
-            case Event.PUBLISHER_ADD_EVENT:
+            case Event.PUBLISHER_REGISTER_EVENT:
+                tasks.offer(new ClientPushPublisherRegisterTask((Group)event.get("group"), (ClientConnection)event.get("client")));
                 break;
-            case Event.GDATA_CHANGE_EVENT:
-                tasks.offer(new ClientPushTask((Group) event.get("group"), null));
+            case Event.GROUP_DATA_CHANGE_EVENT:
+                tasks.offer(new ClientPushGroupDataChangeTask((Group) event.get("group")));
+                break;
+            case Event.SUBSCRIBER_UNREGISTER_EVENT:
+                tasks.offer(new ClientPushSubscriberUnregisterTask((Group) event.get("group"), (ClientConnection) event.get("client"), (String)event.get("clientId")));
+                break;
+            case Event.PUBLISHER_UNREGISTER_EVENT:
+                tasks.offer(new ClientPushPublisherUnregisterTask((Group) event.get("group"), (ClientConnection) event.get("client"), (String)event.get("clientId")));
                 break;
         }
     }
 
-    private void fullPush(Group group) {
-        ServerMessage message = new ServerMessage();
-        List<Record> records = MemoryStore.query(group);
-        ClientConnection[] clients = MemoryStore.getNativeClients();
-        for (Record record : records) {
-            MessageDigest digest = new MessageDigest(ServerMessage.SUBSCRIBER_SYNCHRONIZE_TYPE);
-            digest.put("group", record.getGroup());
-            digest.put("dataId", record.getDataId());
-            digest.put("data", record.getData());
-            message.addDigest(digest);
+    public class ClientPushPublisherUnregisterTask implements Runnable {
+
+        private Group group;
+        private ClientConnection client;
+        private String clientId;
+
+        public ClientPushPublisherUnregisterTask(Group group, ClientConnection client, String clientId) {
+            this.group = group;
+            this.client = client;
+            this.clientId = clientId;
         }
-        if (message.getDigests().size() > 0) {
-            for (final ClientConnection client : clients) {
-                if (client.getChannel().isConnected()) {
-                    String clientId = null;
-                    if ((clientId = client.hasSubscriber(group)) != null) {
+
+        @Override
+        public void run() {
+            if (client.getChannel().isConnected()) {
+                ServerMessage message = new ServerMessage();
+                message.setClientId(clientId);
+                MessageDigest digest = new MessageDigest(ServerMessage.PUBLISHER_UNREGISTER_TYPE);
+                digest.put("group", group.getGroup());
+                digest.put("dataId", group.getDataId());
+                message.addDigest(digest);
+                client.getChannel().write(message);
+            }
+        }
+    }
+
+
+    public class ClientPushSubscriberUnregisterTask implements Runnable {
+
+        private Group group;
+        private ClientConnection client;
+        private String clientId;
+
+        public ClientPushSubscriberUnregisterTask(Group group, ClientConnection client, String clientId) {
+            this.group = group;
+            this.client = client;
+            this.clientId = clientId;
+        }
+
+        @Override
+        public void run() {
+            if (client.getChannel().isConnected()) {
+                ServerMessage message = new ServerMessage();
+                message.setClientId(clientId);
+                MessageDigest digest = new MessageDigest(ServerMessage.SUBSCRIBER_UNREGISTER_TYPE);
+                digest.put("group", group.getGroup());
+                digest.put("dataId", group.getDataId());
+                message.addDigest(digest);
+                client.getChannel().write(message);
+            }
+        }
+    }
+
+    public class ClientPushGroupDataChangeTask implements Runnable {
+
+        public Group group;
+
+        public ClientPushGroupDataChangeTask(Group group) {
+            this.group = group;
+        }
+
+        @Override
+        public void run() {
+            ServerMessage message = new ServerMessage();
+            List<Record> records = MemoryStore.query(group);
+            ClientConnection[] clients = MemoryStore.getNativeClients();
+            for (Record record : records) {
+                MessageDigest digest = new MessageDigest(ServerMessage.SUBSCRIBER_SYNCHRONIZE_TYPE);
+                digest.put("group", record.getGroup());
+                digest.put("dataId", record.getDataId());
+                digest.put("data", record.getData());
+                message.addDigest(digest);
+            }
+            if (message.getDigests().size() > 0) {
+                for (ClientConnection client : clients) {
+                    String clientId = client.hasSubscriber(group);
+                    if (client.getChannel().isConnected() && clientId != null) {
                         message.setClientId(clientId);
                         ChannelFuture future = client.getChannel().write(message);
-                        future.addListener(new ClientPushListener(group, client));
+                        future.addListener(new ClientPushListener(this));
                     }
                 }
             }
         }
     }
 
-    private void singlePush(final Group group, final ClientConnection client) {
-        ServerMessage message = new ServerMessage();
-        List<Record> records = MemoryStore.query(group);
-        for (Record record : records) {
-            MessageDigest digest = new MessageDigest(ServerMessage.SUBSCRIBER_SYNCHRONIZE_TYPE);
-            digest.put("group", record.getGroup());
-            digest.put("dataId", record.getDataId());
-            digest.put("data", record.getData());
-            message.addDigest(digest);
+    public class ClientPushSubscriberRegisterTask implements Runnable {
+
+        private Group group;
+        private ClientConnection client;
+
+        public ClientPushSubscriberRegisterTask(Group group, ClientConnection client) {
+            this.client = client;
+            this.group = group;
         }
-        if (message.getDigests().size() > 0) {
-            if (client.getChannel().isConnected()) {
-                String clientId = null;
-                if ((clientId = client.hasSubscriber(group)) != null) {
-                    message.setClientId(clientId);
-                    ChannelFuture future = client.getChannel().write(message);
-                    future.addListener(new ClientPushListener(group, client));
+
+        @Override
+        public void run() {
+            ServerMessage message = new ServerMessage();
+            String clientId = client.hasSubscriber(group);
+            if (client.getChannel().isConnected() && clientId != null) {
+                message.setClientId(clientId);
+
+                MessageDigest digest = new MessageDigest(ServerMessage.SUBSCRIBER_REGISTER_TYPE);
+                digest.put("group", group.getGroup());
+                digest.put("dataId", group.getDataId());
+                message.addDigest(digest);
+
+                List<Record> records = MemoryStore.query(group);
+                for (Record record : records) {
+                    digest = new MessageDigest(ServerMessage.SUBSCRIBER_SYNCHRONIZE_TYPE);
+                    digest.put("group", record.getGroup());
+                    digest.put("dataId", record.getDataId());
+                    digest.put("data", record.getData());
+                    message.addDigest(digest);
                 }
+
+                ChannelFuture future = client.getChannel().write(message);
+                future.addListener(new ClientPushListener(this));
+            }
+        }
+    }
+
+
+    public class ClientPushPublisherRegisterTask implements Runnable {
+
+        private Group group;
+        private ClientConnection client;
+
+        public ClientPushPublisherRegisterTask(Group group, ClientConnection client) {
+            this.group = group;
+            this.client = client;
+        }
+
+        @Override
+        public void run() {
+            String clientId = client.hasPublisher(group);
+            ServerMessage message = new ServerMessage();
+            if (client.getChannel().isConnected() && clientId != null) {
+                MessageDigest digest = new MessageDigest(ServerMessage.PUBLISHER_REGISTER_TYPE);
+                digest.put("group", group.getGroup());
+                digest.put("dataId", group.getDataId());
+                digest.put("clientId", clientId);
+                message.addDigest(digest);
+                ChannelFuture future = client.getChannel().write(message);
+                future.addListener(new ClientPushListener(this));
             }
         }
     }
 
     public class ClientPushListener implements ChannelFutureListener {
 
-        private Group group;
-        private ClientConnection client;
+        private Runnable task;
 
-        public ClientPushListener(Group group, ClientConnection client) {
-            this.group = group;
-            this.client = client;
+        public ClientPushListener(Runnable task) {
+            this.task = task;
         }
 
         @Override
@@ -117,28 +225,8 @@ public class ClientPusher implements EventListener {
                 LOGGER.error("[CONFIG] push to client " + future.getChannel().getRemoteAddress() + " failed. cause:" +
                         future.getCause());
                 if (!(future.getCause() instanceof ConnectException)) {
-                    tasks.offer(new ClientPushTask(group, client));
+                    tasks.offer(task);
                 }
-            }
-        }
-    }
-
-    public class ClientPushTask implements Runnable {
-
-        private Group group;
-        private ClientConnection client;
-
-        public ClientPushTask(Group group, ClientConnection client) {
-            this.client = client;
-            this.group = group;
-        }
-
-        @Override
-        public void run() {
-            if (client  == null) {
-                fullPush(group);
-            } else {
-                singlePush(group, client);
             }
         }
     }

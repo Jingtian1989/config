@@ -8,10 +8,15 @@ import java.util.Map;
  */
 public class Event {
 
-    public static final int SUBSCRIBER_ADD_EVENT = 0x01;
-    public static final int PUBLISHER_ADD_EVENT = 0x02;
-    public static final int DATA_PUBLISH_EVENT = 0x03;
-    public static final int GDATA_CHANGE_EVENT = 0x04;
+    public static final int SUBSCRIBER_REGISTER_EVENT   = 0x01;
+    public static final int SUBSCRIBER_UNREGISTER_EVENT = 0x02;
+    public static final int PUBLISHER_REGISTER_EVENT    = 0x03;
+    public static final int PUBLISHER_UNREGISTER_EVENT  = 0x04;
+    public static final int PUBLISHER_PUBLISH_EVENT     = 0x05;
+    public static final int GROUP_DATA_CHANGE_EVENT     = 0x06;
+
+
+
 
     private int type;
     private Map<String, Object> attributes;

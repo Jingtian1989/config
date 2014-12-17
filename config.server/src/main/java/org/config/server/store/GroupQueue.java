@@ -32,18 +32,28 @@ public class GroupQueue implements EventListener {
     @Override
     public void handleEvent(Event event) {
         switch (event.getType()) {
-            case Event.DATA_PUBLISH_EVENT:
+            case Event.PUBLISHER_PUBLISH_EVENT:
+            case Event.PUBLISHER_UNREGISTER_EVENT:
                 events.offer(event);
                 break;
         }
     }
 
-    private void handlePublishEvent(Group group, ClientConnection client) {
+    private void handlePublisherPublishEvent(Group group, ClientConnection client) {
         List<ClientConnection> contributors = getContributors(group);
         if (!contributors.contains(client)) {
             contributors.add(client);
         }
-        Event event = new Event(Event.GDATA_CHANGE_EVENT);
+        Event event = new Event(Event.GROUP_DATA_CHANGE_EVENT);
+        event.put("group", group);
+        event.put("client", client);
+        EventDispatcher.fire(event);
+    }
+
+    private void handlePublisherUnregisterEvent(Group group, ClientConnection client) {
+        List<ClientConnection> contributors = getContributors(group);
+        contributors.remove(client);
+        Event event = new Event(Event.GROUP_DATA_CHANGE_EVENT);
         event.put("group", group);
         event.put("client", client);
         EventDispatcher.fire(event);
@@ -71,12 +81,16 @@ public class GroupQueue implements EventListener {
                 }
                 if (event != null) {
                     switch (event.getType()) {
-                        case Event.DATA_PUBLISH_EVENT:
-                            handlePublishEvent((Group)event.get("group"), (ClientConnection)event.get("client"));
+                        case Event.PUBLISHER_PUBLISH_EVENT:
+                            handlePublisherPublishEvent((Group) event.get("group"), (ClientConnection) event.get("client"));
                             break;
+                        case Event.PUBLISHER_UNREGISTER_EVENT:
+                            handlePublisherUnregisterEvent((Group)event.get("group"), (ClientConnection)event.get("client"));
                     }
                 }
             }
         }
     }
+
+
 }

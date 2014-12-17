@@ -28,10 +28,7 @@ public class ClusterHandler extends SimpleChannelUpstreamHandler {
         for (MessageDigest digest : message.getDigests()) {
             switch (digest.getType()) {
                 case ClusterMessage.CLUSTER_SYNC_TYPE:
-                    handlSyncRequest(digest, channel, message.getHostId());
-                    break;
-                case ClusterMessage.CLUSTER_DELAY_TYPE:
-                    handleDelayRequest(digest, channel);
+                    handleSyncRequest(digest, channel, message.getHostId());
                     break;
                 case ClusterMessage.CLUSTER_DELETE_TYPE:
                     handleDeleteRequest(digest, channel);
@@ -40,15 +37,11 @@ public class ClusterHandler extends SimpleChannelUpstreamHandler {
         }
     }
 
-    private void handleDelayRequest(MessageDigest digest, Channel channel) {
-
-    }
-
     private void handleDeleteRequest(MessageDigest digest, Channel channel) {
 
     }
 
-    private void handlSyncRequest(MessageDigest digest, Channel channel, String hostId) {
+    private void handleSyncRequest(MessageDigest digest, Channel channel, String hostId) {
         Group group = Group.getGroup(digest.get("group"), digest.get("dataId"));
         ClientConnection client = MemoryStore.addClusterClient(channel, hostId);
         if (client.hasPublisher(group) == null) {

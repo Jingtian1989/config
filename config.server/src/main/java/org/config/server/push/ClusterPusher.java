@@ -43,59 +43,81 @@ public class ClusterPusher implements EventListener{
     @Override
     public void handleEvent(Event event) {
         switch (event.getType()) {
-            case Event.DATA_PUBLISH_EVENT:
+            case Event.PUBLISHER_PUBLISH_EVENT:
+            case Event.PUBLISHER_UNREGISTER_EVENT:
                 ClientConnection client = (ClientConnection) event.get("client");
                 if (!client.isClusterClient()) {
-                    tasks.offer(new ClusterPushTask(client, null));
+                    tasks.offer(new ClusterFullPushTask(client));
                 }
                 break;
         }
     }
 
-    private void fullPush(ClientConnection client) {
-        List<Channel> clusters = ClusterConfig.getInstance().getClusterChannels();
-        List<Record> records = client.query();
-        ClusterMessage message = new ClusterMessage();
-        for (Record record : records) {
-            MessageDigest digest = new MessageDigest(ClusterMessage.CLUSTER_SYNC_TYPE);
-            digest.put("group", record.getGroup());
-            digest.put("clientId", record.getClientId());
-            digest.put("data", record.getData());
-            digest.put("dataId", record.getDataId());
-            digest.put("version", String.valueOf(record.getVersion()));
-            message.addDigest(digest);
+    public class ClusterSinglePushTask implements Runnable {
+
+        private ClientConnection client;
+        private Channel cluster;
+
+        public ClusterSinglePushTask(ClientConnection client, Channel channel) {
+            this.client = client;
+            this.cluster = channel;
+
         }
-        if (message.getDigests().size() > 0) {
-            message.setHostId(client.getHostId());
+        @Override
+        public void run() {
+            List<Record> records = client.query();
+            ClusterMessage message = new ClusterMessage();
+            for (Record record : records) {
+                MessageDigest digest = new MessageDigest(ClusterMessage.CLUSTER_SYNC_TYPE);
+                digest.put("group", record.getGroup());
+                digest.put("clientId", record.getClientId());
+                digest.put("data", record.getData());
+                digest.put("version", String.valueOf(record.getVersion()));
+                message.addDigest(digest);
+            }
+            if (message.getDigests().size() > 0) {
+                message.setHostId(client.getHostId());
+                ChannelFuture future = cluster.write(message);
+                future.addListener(new ClusterPushListener(client, cluster));
+            }
+        }
+    }
+
+    public class ClusterFullPushTask implements Runnable {
+
+        ClientConnection client;
+
+        public ClusterFullPushTask(ClientConnection client) {
+            this.client = client;
+        }
+        @Override
+        public void run() {
+            List<Channel> clusters = ClusterConfig.getInstance().getClusterChannels();
+            List<Record> records = client.query();
+            ClusterMessage message = new ClusterMessage();
+            for (Record record : records) {
+                MessageDigest digest = new MessageDigest(ClusterMessage.CLUSTER_SYNC_TYPE);
+                digest.put("group", record.getGroup());
+                digest.put("clientId", record.getClientId());
+                digest.put("data", record.getData());
+                digest.put("dataId", record.getDataId());
+                digest.put("version", String.valueOf(record.getVersion()));
+                message.addDigest(digest);
+            }
+            if (message.getDigests().size() > 0) {
+                message.setHostId(client.getHostId());
 //            for (Channel cluster : clusters) {
 //                ChannelFuture future = cluster.write(message);
 //                future.addListener(new ClusterPushListener(client, cluster));
 //            }
-        }
-    }
-
-    private void singlePush(ClientConnection client, Channel cluster) {
-        List<Record> records = client.query();
-        ClusterMessage message = new ClusterMessage();
-        for (Record record : records) {
-            MessageDigest digest = new MessageDigest(ClusterMessage.CLUSTER_SYNC_TYPE);
-            digest.put("group", record.getGroup());
-            digest.put("clientId", record.getClientId());
-            digest.put("data", record.getData());
-            digest.put("version", String.valueOf(record.getVersion()));
-            message.addDigest(digest);
-        }
-        if (message.getDigests().size() > 0) {
-            message.setHostId(client.getHostId());
-            ChannelFuture future = cluster.write(message);
-            future.addListener(new ClusterPushListener(client, cluster));
+            }
         }
     }
 
     public class ClusterPushListener implements ChannelFutureListener {
 
-        ClientConnection client;
-        Channel cluster;
+        private ClientConnection client;
+        private Channel cluster;
 
         public ClusterPushListener(ClientConnection client, Channel cluster) {
             this.client = client;
@@ -108,29 +130,9 @@ public class ClusterPusher implements EventListener{
                 LOGGER.error("[CONFIG] push to cluster " + future.getChannel().getRemoteAddress() + " failed. cause:" +
                         future.getCause());
                 if (!(future.getCause() instanceof ConnectException)) {
-                    tasks.offer(new ClusterPushTask(client, cluster));
+                    tasks.offer(new ClusterSinglePushTask(client, cluster));
                 }
             }
-        }
-    }
-
-    public class ClusterPushTask implements Runnable {
-
-        Channel cluster;
-        ClientConnection client;
-
-        public ClusterPushTask(ClientConnection client, Channel cluster) {
-            this.client = client;
-            this.cluster = cluster;
-        }
-        @Override
-        public void run() {
-            if (cluster == null) {
-                fullPush(client);
-            } else {
-                singlePush(client, cluster);
-            }
-
         }
     }
 

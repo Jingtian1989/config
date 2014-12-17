@@ -21,23 +21,41 @@ public class MemoryStore {
 
     public static void addPublisher(ClientConnection client, Group group, String clientId) {
         client.addPublisher(group, clientId);
-        Event event = new Event(Event.PUBLISHER_ADD_EVENT);
+        Event event = new Event(Event.PUBLISHER_REGISTER_EVENT);
         event.put("group", group);
         event.put("client", client);
+        EventDispatcher.fire(event);
+    }
+
+    public static void deletePublisher(ClientConnection client, Group group, String clientId) {
+        client.deletePublisher(group, clientId);
+        Event event = new Event(Event.PUBLISHER_UNREGISTER_EVENT);
+        event.put("group", group);
+        event.put("client", client);
+        event.put("clientId", clientId);
         EventDispatcher.fire(event);
     }
 
     public static void addSubscriber(ClientConnection client, Group group, String clientId) {
         client.addSubscriber(group, clientId);
-        Event event = new Event(Event.SUBSCRIBER_ADD_EVENT);
+        Event event = new Event(Event.SUBSCRIBER_REGISTER_EVENT);
         event.put("group", group);
         event.put("client", client);
         EventDispatcher.fire(event);
     }
 
+    public static void deleteSubscriber(ClientConnection client, Group group, String clientId) {
+        client.deleteSubscriber(group, clientId);
+        Event event = new Event(Event.SUBSCRIBER_UNREGISTER_EVENT);
+        event.put("client", client);
+        event.put("group", group);
+        event.put("clientId", clientId);
+        EventDispatcher.fire(event);
+    }
+
     public static void publish(ClientConnection client, Group group, String clientId, String data, int version) {
         client.publish(group, clientId, data, version);
-        Event event = new Event(Event.DATA_PUBLISH_EVENT);
+        Event event = new Event(Event.PUBLISHER_PUBLISH_EVENT);
         event.put("group", group);
         event.put("client", client);
         EventDispatcher.fire(event);
@@ -80,4 +98,11 @@ public class MemoryStore {
     public static ClientConnection[] getClusterClients() {
         return clusters.values().toArray(new ClientConnection[0]);
     }
+
+    public static ClientConnection getNativeClient(Channel channel) {
+        return natives.get(channel);
+    }
+
+
+
 }

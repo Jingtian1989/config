@@ -11,13 +11,13 @@ public class ClientMessage implements Serializable {
 
     private static final long serialVersionUID = -2057424368270482764L;
 
-    public static final int PUBLISHER_REGISTER_TYPE = 0x01;
-    public static final int SUBSCRIBER_REGISTER_TYPE = 0x02;
-    public static final int PUBLISHER_PUBLISH_TYPE = 0x03;
+    public static final int PUBLISHER_REGISTER_TYPE     = 0x01;
+    public static final int SUBSCRIBER_REGISTER_TYPE    = 0x02;
+    public static final int PUBLISHER_PUBLISH_TYPE      = 0x03;
 
 
-    public static final int PUBLISHER_UNREGISTER_TYPE = 0x04;
-    public static final int SUBSCRIBER_UNREGISTER_TYPE = 0x05;
+    public static final int PUBLISHER_UNREGISTER_TYPE   = 0x04;
+    public static final int SUBSCRIBER_UNREGISTER_TYPE  = 0x05;
 
     private List<MessageDigest> digests;
 

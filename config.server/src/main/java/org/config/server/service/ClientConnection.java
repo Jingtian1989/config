@@ -45,8 +45,13 @@ public class ClientConnection {
     }
 
 
-    public void addSubscriber(Group group, String clientId) {
+    public boolean addSubscriber(Group group, String clientId) {
         subscribers.put(group, new Subscriber(group, clientId));
+        return true;
+    }
+
+    public void deleteSubscriber(Group group, String clientId) {
+        subscribers.remove(group);
     }
 
     public boolean addPublisher(Group group, String clientId) {
@@ -64,6 +69,10 @@ public class ClientConnection {
         publisher = new Publisher(group, clientId);
         publishers.put(group, publisher);
         return true;
+    }
+
+    public void deletePublisher(Group group, String clientId) {
+        publishers.remove(group);
     }
 
     public void publish(Group group, String clientId, String data, int version) {

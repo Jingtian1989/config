@@ -11,9 +11,8 @@ public class ClusterMessage implements Serializable {
 
     private static final long serialVersionUID = 7933909043381885561L;
 
-    public static final int CLUSTER_SYNC_TYPE = 0x01;
+    public static final int CLUSTER_SYNC_TYPE   = 0x01;
     public static final int CLUSTER_DELETE_TYPE = 0x02;
-    public static final int CLUSTER_DELAY_TYPE = 0x03;
 
     private List<MessageDigest> digests;
     private String hostId;
