@@ -16,13 +16,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MemoryStore {
 
-    private static ConcurrentHashMap<Channel, ClientConnection> natives;
-    private static ConcurrentHashMap<Channel, ClientConnection> clusters;
-
-    public MemoryStore() {
-        this.natives = new ConcurrentHashMap<Channel, ClientConnection>();
-        this.clusters = new ConcurrentHashMap<Channel, ClientConnection>();
-    }
+    private static ConcurrentHashMap<Channel, ClientConnection> natives = new ConcurrentHashMap<Channel, ClientConnection>();
+    private static ConcurrentHashMap<Channel, ClientConnection> clusters = new ConcurrentHashMap<Channel, ClientConnection>();
 
     public static void addPublisher(ClientConnection client, Group group, String clientId) {
         client.addPublisher(group, clientId);

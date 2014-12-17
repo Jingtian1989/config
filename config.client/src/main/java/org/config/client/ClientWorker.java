@@ -32,7 +32,7 @@ public class ClientWorker {
         return instance;
     }
 
-    public ClientWorker() {
+    private ClientWorker() {
         initConnector();
         signals = new LinkedBlockingQueue<Object>();
         worker = new ClientWorkerThread();
@@ -60,6 +60,15 @@ public class ClientWorker {
     }
 
     private void ensureConnected() {
+        if (channel == null) {
+            connect();
+        } else if (!channel.isConnected()) {
+            channel.close();
+            connect();
+        }
+    }
+
+    private void connect() {
         InetSocketAddress address = new InetSocketAddress("127.0.0.1", 8009);
         ChannelFuture future = bootstrap.connect(address);
         future.awaitUninterruptibly(300l);
@@ -70,17 +79,20 @@ public class ClientWorker {
     }
 
 
+
     public void signal() {
         signals.offer(new Object());
     }
 
     private class ClientWorkerThread extends Thread {
 
-        private static final int TIMEOUT = 30000;
+        private static final int TIMEOUT = 1000;
         @Override
         public void run() {
-            run0();
-            wait0();
+            for (;;) {
+                wait0();
+                run0();
+            }
         }
 
         public void wait0() {

@@ -67,10 +67,10 @@ public class ClusterPusher implements EventListener{
         }
         if (message.getDigests().size() > 0) {
             message.setHostId(client.getHostId());
-            for (Channel cluster : clusters) {
-                ChannelFuture future = cluster.write(message);
-                future.addListener(new ClusterPushListener(client, cluster));
-            }
+//            for (Channel cluster : clusters) {
+//                ChannelFuture future = cluster.write(message);
+//                future.addListener(new ClusterPushListener(client, cluster));
+//            }
         }
     }
 

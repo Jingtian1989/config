@@ -1,6 +1,5 @@
 package org.config.client;
 
-
 import org.config.common.Constants;
 import org.config.common.domain.ClientMessage;
 import org.config.common.domain.MessageDigest;
@@ -51,7 +50,6 @@ public class Publisher extends ConfigClient {
         if (data == null) {
             throw new IllegalArgumentException("[CONFIG] publish data can't be null.");
         }
-
         this.data = data;
         this.version.incrementAndGet();
         ClientWorker.getInstance().signal();
